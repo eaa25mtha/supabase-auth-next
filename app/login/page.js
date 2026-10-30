@@ -1,59 +1,66 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
-  title: "Sign up",
+  title: "Log in",
 };
 
-//server actions
-//signUp funktionen køres når vi trykker "sign up" inde på appen
-async function signUp(formData) {
-  "use server"; //funktionen køres på serveren, altså ikke lokalt
+// The same pattern as signUp, but with signInWithPassword
+async function signIn(formData) {
+  "use server";
 
   const email = formData.get("email");
   const password = formData.get("password");
 
   const supabase = await createClient();
-  const data = await supabase.auth.signUp({ email, password });
-  if (data.error) {
-    redirect("/signup?error=true");
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    redirect("/login?error=true");
   }
 
   redirect("/");
 }
 
-export default async function SignUpPage({ searchParams }) {
+export default async function LoginPage({ searchParams }) {
+  // ?error=true is set by signIn when the email or password is wrong
   const { error } = await searchParams;
 
   return (
     <main>
-      <h1>Sign up page</h1>
+      <h1>Log in</h1>
       {error && (
         <p className="form-error" role="alert">
-          Could not sign up. Maybe the email is already in use.
+          Wrong email or password.
         </p>
       )}
-      <form className="auth-form" action={signUp}>
+      <form action={signIn} className="auth-form">
         <label htmlFor="email">Email</label>
         <input
           id="email"
           name="email"
           type="email"
           placeholder="you@example.com"
+          autoComplete="email"
           required
         />
+
         <label htmlFor="password">Password</label>
         <input
           id="password"
           name="password"
           type="password"
-          placeholder="At least 6 characters"
-          autoComplete="new-password"
-          minLength={6}
+          placeholder="Your password"
+          autoComplete="current-password"
           required
         />
-        <button type="submit">Sign up</button>
+
+        <button type="submit">Log in</button>
       </form>
+      <p>
+        No account yet? <Link href="/signup">Sign up</Link>
+      </p>
     </main>
   );
 }
